@@ -1,6 +1,6 @@
 export const baseURL =
-  process.env.NODE_ENV == "development"
-    ? "http://localhost:3000"
+  process.env.NODE_ENV === "development"
+    ? process.env.NEXT_PUBLIC_BASE_URL!
     : "https://" +
       (process.env.VERCEL_ENV === "production"
         ? process.env.VERCEL_PROJECT_PRODUCTION_URL
