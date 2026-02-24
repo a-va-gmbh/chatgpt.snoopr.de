@@ -88,15 +88,16 @@ export default function Home() {
             </div>
           </div>
         )}
-        <Image
+        <div>Name returned from tool call: {name ?? "..."}</div>
+        {/* <Image
           className="dark:invert"
           src="/next.svg"
           alt="Next.js logo"
           width={180}
           height={38}
           priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
+        /> */}
+        {/* <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
           <li className="mb-2 tracking-[-.01em]">
             Welcome to the ChatGPT Apps SDK Next.js Starter
           </li>
@@ -104,9 +105,9 @@ export default function Home() {
             Name returned from tool call: {name ?? "..."}
           </li>
           <li className="mb-2 tracking-[-.01em]">MCP server path: /mcp</li>
-        </ol>
+        </ol> */}
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
+        {/* <div className="flex gap-4 items-center flex-col sm:flex-row">
           <Link
             className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
             prefetch={false}
@@ -122,7 +123,7 @@ export default function Home() {
           >
             Deploy on Vercel
           </a>
-        </div>
+        </div> */}
       </main>
     </div>
   );
