@@ -2,6 +2,8 @@ import { baseURL } from "@/baseUrl";
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
 
+let requestCounter = 0;
+
 const getAppsSdkCompatibleHtml = async (baseUrl: string, path: string) => {
   const result = await fetch(`${baseUrl}${path}`);
   return await result.text();
@@ -98,5 +100,45 @@ const handler = createMcpHandler(async (server) => {
   );
 });
 
-export const GET = handler;
-export const POST = handler;
+export const GET = async (req: Request) => {
+  requestCounter++;
+  const id = requestCounter;
+  try {
+    console.log(`\n[MCP-${id}] GET request`);
+    console.log(`[MCP-${id}] Method: GET`);
+    console.log(`[MCP-${id}] URL: ${req.url}`);
+    console.log(`[MCP-${id}] Headers:`, JSON.stringify(Object.fromEntries(req.headers), null, 2));
+    
+    const response = handler(req);
+    console.log(`[MCP-${id}] GET returning`);
+    return response;
+  } catch (error) {
+    console.error(`[MCP-${id}] GET ERROR:`, error instanceof Error ? error.message : String(error));
+    if (error instanceof Error) console.error(`[MCP-${id}] Stack:`, error.stack);
+    throw error;
+  }
+};
+
+export const POST = async (req: Request) => {
+  requestCounter++;
+  const id = requestCounter;
+  try {
+    console.log(`\n[MCP-${id}] POST request`);
+    console.log(`[MCP-${id}] Method: POST`);
+    console.log(`[MCP-${id}] URL: ${req.url}`);
+    console.log(`[MCP-${id}] Headers:`, JSON.stringify(Object.fromEntries(req.headers), null, 2));
+    
+    // Read body
+    const clonedReq = req.clone();
+    const body = await clonedReq.text();
+    console.log(`[MCP-${id}] Body:`, body);
+    
+    const response = handler(req);
+    console.log(`[MCP-${id}] POST returning`);
+    return response;
+  } catch (error) {
+    console.error(`[MCP-${id}] POST ERROR:`, error instanceof Error ? error.message : String(error));
+    if (error instanceof Error) console.error(`[MCP-${id}] Stack:`, error.stack);
+    throw error;
+  }
+};
