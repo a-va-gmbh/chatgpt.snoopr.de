@@ -13,15 +13,14 @@ import {
 export default function Home() {
   const toolOutput = useWidgetProps<{
     name?: string;
-    // result?: { structuredContent?: { name?: string } };
-    structuredContent?: { name?: string };
+    result?: { structuredContent?: { name?: string } };
   }>();
   const maxHeight = useMaxHeight() ?? undefined;
   const displayMode = useDisplayMode();
   const requestDisplayMode = useRequestDisplayMode();
   const isChatGptApp = useIsChatGptApp();
 
-  const name = toolOutput?.structuredContent?.name || toolOutput?.name;
+  const name = toolOutput?.result?.structuredContent?.name || toolOutput?.name;
 
   return (
     <div
