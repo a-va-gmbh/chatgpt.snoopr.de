@@ -20,7 +20,7 @@ export default function Home() {
   const requestDisplayMode = useRequestDisplayMode();
   const isChatGptApp = useIsChatGptApp();
 
-  const name = toolOutput?.result?.structuredContent?.name || toolOutput?.name;
+  const name = toolOutput?.result?.structuredContent?.name; // || toolOutput?.name;
 
   return (
     <div
