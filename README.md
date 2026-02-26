@@ -1,3 +1,12 @@
+# AVA als ChatGPT App
+
+## MCP-Testing 
+
+```bash
+npx @modelcontextprotocol/inspector
+```
+
+
 # ChatGPT Apps SDK Next.js Starter
 
 A minimal Next.js application demonstrating how to build an [OpenAI Apps SDK](https://developers.openai.com/apps-sdk) compatible MCP server with widget rendering in ChatGPT.

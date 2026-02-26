@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <title>AVA - Versicherungssuche</title>
+    <style>
+      :root {
+        color: #0b0b0f;
+        font-family:
+          "Inter",
+          system-ui,
+          -apple-system,
+          sans-serif;
+      }
+
+      html,
+      body {
+        width: 100%;
+        min-height: 100%;
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 16px;
+        background: #f6f8fb;
+      }
+
+      main {
+        width: 100%;
+        max-width: 600px;
+        min-height: 200px;
+        margin: 0 auto;
+        background: #fff;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+      }
+
+      h2 {
+        margin: 0 0 8px;
+        font-size: 1.5rem;
+        color: #111bf5;
+      }
+
+      .subtitle {
+        color: #6c768a;
+        font-size: 0.9rem;
+        margin-bottom: 20px;
+      }
+
+      .products-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .product-card {
+        background: linear-gradient(135deg, #f8f9ff 0%, #f2f4fb 100%);
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #e5e7eb;
+        transition: all 0.2s ease;
+      }
+
+      .product-card:hover {
+        border-color: #111bf5;
+        box-shadow: 0 4px 12px rgba(17, 27, 245, 0.1);
+        transform: translateY(-2px);
+      }
+
+      .product-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 12px;
+      }
+
+      .product-name {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #0b0b0f;
+        margin: 0;
+      }
+
+      .product-type {
+        display: inline-block;
+        padding: 4px 12px;
+        background: #111bf5;
+        color: white;
+        border-radius: 16px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .product-provider {
+        color: #6c768a;
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+      }
+
+      .product-description {
+        color: #4b5563;
+        line-height: 1.5;
+        margin-bottom: 12px;
+        font-size: 0.95rem;
+      }
+
+      .product-features {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .feature-tag {
+        background: white;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        color: #374151;
+        border: 1px solid #e5e7eb;
+      }
+
+      .product-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 12px;
+        border-top: 1px solid #e5e7eb;
+      }
+
+      .product-price {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #111bf5;
+      }
+
+      .product-price-period {
+        font-size: 0.85rem;
+        font-weight: 400;
+        color: #6c768a;
+      }
+
+      .product-rating {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.9rem;
+        color: #6c768a;
+      }
+
+      .star {
+        color: #fbbf24;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6c768a;
+      }
+
+      .empty-icon {
+        font-size: 3rem;
+        margin-bottom: 16px;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6c768a;
+      }
+
+      .spinner {
+        border: 3px solid #f3f4f6;
+        border-top: 3px solid #111bf5;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 16px;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h2>AVA Versicherungssuche</h2>
+      <p class="subtitle">Ihre persönlichen Versicherungsempfehlungen</p>
+      <div id="products-container" class="products-grid"></div>
+    </main>
+
+    <script type="module">
+      const containerEl = document.querySelector("#products-container");
+      let products = [];
+      let isLoading = true;
+
+      const render = () => {
+        if (isLoading) {
+          containerEl.innerHTML = `
+            <div class="loading">
+              <div class="spinner"></div>
+              <p>Suche nach passenden Versicherungen...</p>
+            </div>
+          `;
+          return;
+        }
+
+        if (!products || products.length === 0) {
+          containerEl.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">🔍</div>
+              <p>Keine Versicherungsprodukte gefunden</p>
+            </div>
+          `;
+          return;
+        }
+
+        containerEl.innerHTML = products
+          .map(
+            (product) => `
+          <div class="product-card">
+            <div class="product-header">
+              <div>
+                <h3 class="product-name">${product.name}</h3>
+                <p class="product-provider">📋 ${product.provider}</p>
+              </div>
+              <span class="product-type">${product.type}</span>
+            </div>
+            <p class="product-description">${product.description}</p>
+            <div class="product-features">
+              ${product.features.map((feature) => `<span class="feature-tag">✓ ${feature}</span>`).join("")}
+            </div>
+            <div class="product-footer">
+              <div class="product-price">
+                ${product.monthlyPrice}€
+                <span class="product-price-period">/Monat</span>
+              </div>
+              <div class="product-rating">
+                <span class="star">★</span>
+                <span>${product.rating}/5</span>
+              </div>
+            </div>
+          </div>
+        `
+          )
+          .join("");
+      };
+
+      const updateFromResponse = (response) => {
+        if (response?.structuredContent?.products) {
+          isLoading = false;
+          products = response.structuredContent.products;
+          render();
+        }
+      };
+
+      // MCP Apps standard bridge: JSON-RPC messages over postMessage
+      let rpcId = 0;
+      const pendingRequests = new Map();
+
+      const rpcNotify = (method, params) => {
+        window.parent.postMessage({ jsonrpc: "2.0", method, params }, "*");
+      };
+
+      const rpcRequest = (method, params) =>
+        new Promise((resolve, reject) => {
+          const id = ++rpcId;
+          pendingRequests.set(id, { resolve, reject });
+          window.parent.postMessage(
+            { jsonrpc: "2.0", id, method, params },
+            "*"
+          );
+        });
+
+      window.addEventListener(
+        "message",
+        (event) => {
+          if (event.source !== window.parent) return;
+          const message = event.data;
+          if (!message || message.jsonrpc !== "2.0") return;
+
+          // Responses
+          if (typeof message.id === "number") {
+            const pending = pendingRequests.get(message.id);
+            if (!pending) return;
+            pendingRequests.delete(message.id);
+
+            if (message.error) {
+              pending.reject(message.error);
+              return;
+            }
+
+            pending.resolve(message.result);
+            return;
+          }
+
+          // Notifications
+          if (typeof message.method !== "string") return;
+          if (message.method === "ui/notifications/tool-result") {
+            updateFromResponse(message.params);
+          }
+        },
+        { passive: true }
+      );
+
+      const initializeBridge = async () => {
+        const appInfo = { name: "ava-insurance-widget", version: "1.0.0" };
+        const appCapabilities = {};
+        const protocolVersion = "2026-01-26";
+
+        try {
+          await rpcRequest("ui/initialize", {
+            appInfo,
+            appCapabilities,
+            protocolVersion,
+          });
+          rpcNotify("ui/notifications/initialized", {});
+        } catch (error) {
+          console.error("Failed to initialize the MCP Apps bridge:", error);
+          isLoading = false;
+          render();
+          throw error;
+        }
+      };
+
+      initializeBridge();
+      render();
+    </script>
+  </body>
+</html>
