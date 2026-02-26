@@ -96,18 +96,59 @@ const mockInsuranceProducts: InsuranceProduct[] = [
   }
 ];
 
+function normalizeQuery(rawQuery: string) {
+  const lower = rawQuery.toLowerCase().trim();
+  const cleaned = lower
+    .replace(/versicherungen?|versicherung/g, "")
+    .replace(/produkte?/g, "")
+    .replace(/[^a-zäöüß\s-]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const typeAliases: Record<string, string> = {
+    haftpflicht: "Haftpflicht",
+    hausrat: "Hausrat",
+    bu: "BU",
+    berufsunfähigkeit: "BU",
+    rechtsschutz: "Rechtsschutz",
+    zahnzusatz: "Zahnzusatz",
+  };
+
+  let inferredType: string | undefined;
+  for (const key of Object.keys(typeAliases)) {
+    if (lower.includes(key)) {
+      inferredType = typeAliases[key];
+      break;
+    }
+  }
+
+  const wantsAll = /\b(alle|alles|gesamt|verfuegbar|verfügbar)\b/.test(lower);
+
+  return { cleaned, inferredType, wantsAll };
+}
+
 function searchInsuranceProducts(query: string, productType?: string): InsuranceProduct[] {
-  const lowerQuery = query.toLowerCase();
-  
-  return mockInsuranceProducts.filter(product => {
-    const matchesQuery = 
-      product.name.toLowerCase().includes(lowerQuery) ||
-      product.description.toLowerCase().includes(lowerQuery) ||
-      product.type.toLowerCase().includes(lowerQuery) ||
-      product.features.some(f => f.toLowerCase().includes(lowerQuery));
-    
-    const matchesType = !productType || product.type.toLowerCase() === productType.toLowerCase();
-    
+  const { cleaned, inferredType, wantsAll } = normalizeQuery(query);
+  const effectiveType = productType || inferredType;
+
+  if (wantsAll || !cleaned) {
+    return effectiveType
+      ? mockInsuranceProducts.filter(
+          (product) => product.type.toLowerCase() === effectiveType.toLowerCase()
+        )
+      : mockInsuranceProducts;
+  }
+
+  return mockInsuranceProducts.filter((product) => {
+    const matchesQuery =
+      product.name.toLowerCase().includes(cleaned) ||
+      product.description.toLowerCase().includes(cleaned) ||
+      product.type.toLowerCase().includes(cleaned) ||
+      product.features.some((feature) => feature.toLowerCase().includes(cleaned));
+
+    const matchesType =
+      !effectiveType || product.type.toLowerCase() === effectiveType.toLowerCase();
+
     return matchesQuery && matchesType;
   });
 }
