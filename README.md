@@ -1,53 +1,275 @@
-# AVA als ChatGPT App
+# AVA - ChatGPT App für Versicherungssuche
 
-## MCP-Testing 
+Eine ChatGPT App, die Versicherungsprodukte sucht und in einem interaktiven Widget anzeigt.
+
+## 🎯 Features
+
+- **Smart Search**: Durchsucht 5 Mock-Versicherungsprodukte (Haftpflicht, Hausrat, BU, Rechtsschutz, Zahnzusatz)
+- **Instant Widget**: Zeigt Suchergebnisse sofort in einem visuellen Widget an
+- **Intelligente Query-Verarbeitung**: Erkennt Varianten wie "Haftpflichtversicherung", "alle Produkte", "BU"
+- **MCP-Standard**: Nutzt Model Context Protocol für ChatGPT Integration
+
+## 🏗️ Architektur
+
+### Tech Stack
+- **Next.js 15** mit App Router
+- **MCP Server** (Model Context Protocol) über JSON-RPC
+- **Widget**: Vanilla HTML/CSS/JS mit MCP Apps Bridge
+- **TypeScript** für Type Safety
+
+### MCP Tool: `search_and_show_products`
+
+Ein kombiniertes Tool, das:
+1. Versicherungsdatenbank durchsucht
+2. Ergebnisse sofort im Widget anzeigt
+3. Keine Zwischenschritte - optimale UX
+
+**Warum ein kombiniertes Tool?**
+- ✅ ChatGPT macht nur einen Tool-Call
+- ✅ Keine Zwischenfragen an den User
+- ✅ Widget wird sofort mit Daten geladen
+- ✅ Bessere User Experience
+
+---
+
+## 🚀 Quick Start
+
+### 1. Development Server
 
 ```bash
-npx @modelcontextprotocol/inspector
+npm install
+npm run dev
 ```
 
+Server läuft auf `http://localhost:3000`
 
-# ChatGPT Apps SDK Next.js Starter
+### 2. Lokales Testing mit MCP Inspector
 
-A minimal Next.js application demonstrating how to build an [OpenAI Apps SDK](https://developers.openai.com/apps-sdk) compatible MCP server with widget rendering in ChatGPT.
+```bash
+npx @modelcontextprotocol/inspector@latest http://localhost:3000/mcp
+```
 
-## Overview
+Der Inspector öffnet sich im Browser. Dort kannst du:
+- ✅ Tools anzeigen
+- ✅ Tool-Calls manuell testen
+- ✅ JSON-Responses debuggen
+- ℹ️ Widget-HTML ansehen (wird nicht gerendert im Inspector)
 
-This project shows how to integrate a Next.js application with the ChatGPT Apps SDK using the Model Context Protocol (MCP). It includes a working MCP server that exposes tools and resources that can be called from ChatGPT, with responses rendered natively in ChatGPT.
+**Wichtig**: Das Widget wird nur in ChatGPT als iframe gerendert, nicht im Inspector!
 
-## Key Components
+### 3. ChatGPT Integration (Developer Mode)
 
-### 1. MCP Server Route (`app/mcp/route.ts`)
+#### Tunnel einrichten
 
-The core MCP server implementation that exposes tools and resources to ChatGPT.
+```bash
+ngrok http 3000
+```
 
-**Key features:**
-- **Tool registration** with OpenAI-specific metadata
-- **Resource registration** that serves HTML content for iframe rendering
-- **Cross-linking** between tools and resources via `templateUri`
+Kopiere die ngrok URL (z.B. `https://abc123.ngrok.app`)
 
-**OpenAI-specific metadata:**
+#### ChatGPT Setup
+
+1. Öffne [ChatGPT](https://chatgpt.com)
+2. Gehe zu **Settings → Apps & Connectors → Advanced settings**
+3. Aktiviere **Developer Mode**
+4. Gehe zu **Settings → Connectors**
+5. Klicke **Create**
+6. Trage ein:
+   - **URL**: `https://abc123.ngrok.app/mcp`
+   - **Name**: `AVA - Versicherungssuche`
+   - **Beschreibung**: `Findet und zeigt Versicherungsprodukte`
+7. Klicke **Create**
+
+#### Im Chat testen
+
+1. Neuer Chat
+2. Klicke **+** Button
+3. Wähle **AVA** aus
+4. Teste mit:
+
+```
+"Suche nach Haftpflichtversicherungen"
+"Zeige mir alle verfügbaren Versicherungen"
+"Ich brauche eine Berufsunfähigkeitsversicherung"
+```
+
+Das Widget erscheint automatisch mit den Produkten! 🎉
+
+#### Nach Code-Änderungen
+
+1. **Settings → Connectors**
+2. Wähle deinen Connector
+3. Klicke **Refresh** (⟳)
+
+---
+
+## 📦 Mock-Datenbank
+
+5 Versicherungsprodukte sind aktuell gemockt:
+
+| ID      | Name                          | Typ          | Anbieter          | Preis/Monat |
+|---------|-------------------------------|--------------|-------------------|-------------|
+| ins-001 | Privat-Haftpflicht Optimal    | Haftpflicht  | ERGO              | 5,90€       |
+| ins-002 | Hausrat Premium Plus          | Hausrat      | Allianz           | 12,50€      |
+| ins-003 | Berufsunfähigkeit Komfort     | BU           | Alte Leipziger    | 45,00€      |
+| ins-004 | Rechtsschutz Mobil & Privat   | Rechtsschutz | ARAG              | 18,90€      |
+| ins-005 | Zahnzusatz Premium            | Zahnzusatz   | DKV               | 32,00€      |
+
+---
+
+## 🎨 Widget Customization
+
+Widget-Datei: [`public/insurance-widget.html`](public/insurance-widget.html)
+
+Anpassbar:
+- **Styles**: `<style>`-Block
+- **Layout**: Product Card Struktur
+- **Texte**: Labels und Beschreibungen
+- **Animationen**: CSS Transitions
+
+### MCP Apps Bridge
+
+Das Widget nutzt JSON-RPC over `postMessage`:
+
+```javascript
+// Bridge initialisieren
+await rpcRequest("ui/initialize", { appInfo, appCapabilities, protocolVersion })
+
+// Benachrichtigung senden
+rpcNotify("ui/notifications/initialized", {})
+
+// Tool aufrufen (vom Widget aus)
+await rpcRequest("tools/call", { name, arguments })
+
+// Tool-Results empfangen
+window.addEventListener("message", (event) => {
+  if (event.data.method === "ui/notifications/tool-result") {
+    updateFromResponse(event.data.params)
+  }
+})
+```
+
+---
+
+## 🔧 Troubleshooting
+
+### Widget zeigt "Keine Produkte"
+
+**Ursache**: Query wird nicht erkannt
+
+**Lösung**: Die Suche normalisiert automatisch:
+- `"Haftpflichtversicherung"` → `"Haftpflicht"`
+- `"alle"` / `"alles"` → zeigt alle Produkte
+- `"BU"` / `"Berufsunfähigkeit"` → wird gemappt
+
+Prüfe Server-Logs für die gesendete Query.
+
+### Widget zeigt Loading-Spinner endlos
+
+**Ursache**: `structuredContent` fehlt oder falsch platziert
+
+**Lösung**: Stelle sicher, dass `structuredContent` top-level im Tool-Result ist:
+
 ```typescript
 {
-  "openai/outputTemplate": widget.templateUri,      // Links to resource
-  "openai/toolInvocation/invoking": "Loading...",   // Loading state text
-  "openai/toolInvocation/invoked": "Loaded",        // Completion state text
-  "openai/widgetAccessible": false,                 // Widget visibility
-  "openai/resultCanProduceWidget": true            // Enable widget rendering
+  content: [...],
+  structuredContent: { products: [...] },  // ← Hier, nicht unter _meta
+  _meta: { ... }
 }
 ```
 
-Full configuration options: [OpenAI Apps SDK MCP Documentation](https://developers.openai.com/apps-sdk/build/mcp-server)
+### ChatGPT findet Connector nicht
 
-### 2. Asset Configuration (`next.config.ts`)
+- Prüfe, ob ngrok läuft
+- Teste URL manuell: `https://abc123.ngrok.app/mcp`
+- Erwartet: JSON mit `protocolVersion`, `serverInfo`, `capabilities`
 
-**Critical:** Set `assetPrefix` to ensure `/_next/` static assets are fetched from the correct origin:
+### MCP Inspector Connection Error
 
-```typescript
-const nextConfig: NextConfig = {
-  assetPrefix: baseURL,  // Prevents 404s on /_next/ files in iframe
-};
+- Server läuft? `npm run dev`
+- Port 3000 frei?
+- Browser Console prüfen
+
+---
+
+## 📂 Projektstruktur
+
 ```
+chatgpt.snoopr.de/
+├── app/
+│   ├── mcp/
+│   │   └── route.ts          # MCP Server (JSON-RPC Handler)
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+├── public/
+│   └── insurance-widget.html # Widget Component
+├── package.json
+└── README.md
+```
+
+### Key Files
+
+- **`app/mcp/route.ts`**: MCP Server Implementation
+  - `handleMCPRequest()` - JSON-RPC Router
+  - `searchInsuranceProducts()` - Smart Search mit Normalisierung
+  - `getInsuranceWidget()` - Widget Resource Loader
+  - `POST`, `GET`, `OPTIONS` Handler
+
+- **`public/insurance-widget.html`**: Widget UI
+  - MCP Apps Bridge Integration
+  - Product Card Rendering
+  - Loading States
+
+---
+
+## 📚 Resources
+
+- [OpenAI Apps SDK](https://developers.openai.com/apps-sdk/)
+- [Model Context Protocol](https://modelcontextprotocol.io/)
+- [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector)
+
+---
+
+## 🚀 Deployment (Vercel)
+
+```bash
+git add .
+git commit -m "Update AVA app"
+git push
+```
+
+Vercel deployed automatisch.
+
+**Nach Deployment**:
+1. Kopiere die Vercel URL
+2. In ChatGPT: Connector **Refresh** oder neu anlegen mit Production URL
+3. Testen!
+
+---
+
+## ✅ Roadmap
+
+- [x] MCP Server mit Tool
+- [x] Widget mit MCP Apps Bridge
+- [x] Mock-Datenbank
+- [x] Smart Query Normalisierung
+- [ ] Echte API-Integration
+- [ ] Filter (Preis, Rating, Anbieter)
+- [ ] Vergleichsfunktion
+- [ ] OAuth Authentication
+- [ ] Production Deployment
+- [ ] App Store Submission
+
+---
+
+## 🤝 Contributing
+
+Feedback und Verbesserungsvorschläge willkommen!
+
+---
+
+**Built with ❤️ for ChatGPT Apps**
 
 Without this, Next.js will attempt to load assets from the iframe's URL, causing 404 errors.
 
